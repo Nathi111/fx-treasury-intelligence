@@ -35,7 +35,7 @@ jobs:
         run: python -m pytest -q
 
   etl:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -54,14 +54,6 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Check database credential visibility
-        env:
-          REPO_SECRET_PRESENT: ${{ secrets.DATABASE_URL != '' }}
-          REPO_VARIABLE_PRESENT: ${{ vars.DATABASE_URL != '' }}
-        run: |
-          echo "repository_secret_present=$REPO_SECRET_PRESENT"
-          echo "repository_variable_present=$REPO_VARIABLE_PRESENT"
 
       - name: Run ETL
         env:
