@@ -1,0 +1,66 @@
+name: ETL Pipeline
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 4 * * *"
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: python -m pytest -q
+
+  etl:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run ETL
+        env:
+          DATABASE_URL: ${{ secrets.DATABASEURL }}
+          FX_START_DATE: "2024-01-01"
+          FX_QUOTES: "USD,GBP,EUR"
+          WORLD_BANK_COUNTRY: "ZAF"
+          WORLD_BANK_START_YEAR: "2018"
+          WORLD_BANK_INDICATORS: "FP.CPI.TOTL.ZG,NY.GDP.MKTP.KD.ZG"
+        run: python -m src.pipeline
