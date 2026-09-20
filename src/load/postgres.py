@@ -9,8 +9,17 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
 
+def normalise_database_url(database_url: str) -> str:
+    """Use SQLAlchemy's psycopg v3 dialect for standard Neon/Postgres URLs."""
+    if database_url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + database_url.removeprefix("postgresql://")
+    if database_url.startswith("postgres://"):
+        return "postgresql+psycopg://" + database_url.removeprefix("postgres://")
+    return database_url
+
+
 def make_engine(database_url: str) -> Engine:
-    return create_engine(database_url, pool_pre_ping=True)
+    return create_engine(normalise_database_url(database_url), pool_pre_ping=True)
 
 
 def run_sql_file(engine: Engine, path: Path) -> None:
