@@ -35,7 +35,7 @@ jobs:
         run: python -m pytest -q
 
   etl:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -57,7 +57,7 @@ jobs:
 
       - name: Run ETL
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ secrets.DATABASEURL }}
           FX_START_DATE: "2024-01-01"
           FX_QUOTES: "USD,GBP,EUR"
           WORLD_BANK_COUNTRY: "ZAF"
