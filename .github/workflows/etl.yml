@@ -4,11 +4,17 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "15 4 * * *"
+  push:
+    branches:
+      - dev
+  pull_request:
+    branches:
+      - main
 
 jobs:
-  test-and-run:
+  test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     permissions:
       contents: read
 
@@ -27,6 +33,27 @@ jobs:
 
       - name: Run unit tests
         run: pytest -q
+
+  etl:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Run ETL
         env:
