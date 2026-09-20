@@ -24,5 +24,5 @@ World Bank v2 API -----/                         |
 - **Silver** stores typed, deduplicated business-grain records.
 - **Gold** exposes reporting-ready views for Power BI.
 - Loads use PostgreSQL `ON CONFLICT` upserts so reruns are idempotent.
-- GitHub Actions runs tests before the ETL and stores `DATABASE_URL` only as a secret.
+- GitHub Actions runs tests before the ETL. The repository secret is named `DATABASEURL` and is exposed to Python as the `DATABASE_URL` environment variable.
 - Data-quality SQL is a pipeline gate: the ETL fails if the quality view returns failures.
