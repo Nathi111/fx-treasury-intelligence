@@ -312,6 +312,14 @@ python -m src.pipeline
 └── README.md
 ~~~
 
+## Project documentation
+
+- [Architecture](docs/architecture.md)
+- [Data model](docs/data_model.md)
+- [Data dictionary](docs/data_dictionary.md)
+- [Interview talking points](docs/interview_talking_points.md)
+- [Open Phase 2 enhancements](https://github.com/Nathi111/fx-treasury-intelligence/issues)
+
 ## Portfolio outcomes
 
 This project demonstrates an end-to-end workflow rather than a dashboard-only exercise:
