@@ -204,15 +204,21 @@ These values are a **point-in-time portfolio snapshot**, not static assumptions.
 
 ## Power BI screenshots
 
-Final screenshots will be stored in the screenshots/ folder using:
+### Treasury Executive Overview
 
-~~~text
-screenshots/
-├── 01-treasury-executive-overview.png
-├── 02-currency-risk-analysis.png
-├── 03-procurement-exposure.png
-└── 04-macro-market-context.png
-~~~
+![Treasury Executive Overview](screenshots/01-treasury-executive-overview.png)
+
+### Currency Risk Analysis
+
+![Currency Risk Analysis](screenshots/02-currency-risk-analysis.png)
+
+### Procurement Exposure
+
+![Procurement Exposure](screenshots/03-procurement-exposure.png)
+
+### Macro & Market Context
+
+![Macro & Market Context](screenshots/04-macro-market-context.png)
 
 The Power BI .pbix file is **available on request**.
 
