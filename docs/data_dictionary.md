@@ -1,6 +1,25 @@
 # Data Dictionary
 
-This dictionary documents the implemented Bronze, Silver and Gold objects used by the FX Treasury Intelligence project.
+This dictionary documents the implemented operational, Bronze, Silver and Gold objects used by the FX Treasury Intelligence project.
+
+## Operational metadata
+
+### `ops.etl_run`
+
+Grain: one row per ETL pipeline execution.
+
+| Column | Type | Description |
+|---|---|---|
+| `run_id` | BIGSERIAL | Unique pipeline-run identifier |
+| `started_at_utc` | TIMESTAMPTZ | UTC timestamp when the run audit record was created |
+| `completed_at_utc` | TIMESTAMPTZ | UTC completion timestamp; null while running |
+| `status` | TEXT | `RUNNING`, `SUCCESS`, or `FAILED` |
+| `fx_rows_processed` | INTEGER | FX rows processed during the run |
+| `macro_rows_processed` | INTEGER | Macro rows processed during the run |
+| `po_rows_processed` | INTEGER | Purchase-order rows processed during the run |
+| `error_message` | TEXT | Captured exception type/message for failed runs |
+
+The audit row is created before the main ETL/schema work starts, then finalized on success or failure. Partial row counts are retained if a later pipeline stage fails.
 
 ## Bronze layer
 
