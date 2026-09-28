@@ -82,6 +82,16 @@ No confidential or employer data is used.
 
 ## Data architecture
 
+### Operations
+
+Pipeline-run metadata is stored separately from analytical data:
+
+~~~text
+ops.etl_run
+~~~
+
+Each execution is recorded with run status, timestamps, processed row counts and any failure message.
+
 ### Bronze
 
 Raw API payloads are retained for traceability and replay.
@@ -234,6 +244,7 @@ The pipeline includes:
 - purchase-order validation
 - SQL data-quality view
 - pipeline failure when Gold-layer quality checks return failures
+- ETL run auditing with SUCCESS/FAILED status and row counts
 - Power BI KPI reconciliation against the Gold layer
 
 gold.v_data_quality_failures is retained as an operational control rather than loaded into the business-facing Power BI model.
@@ -260,6 +271,9 @@ The project currently includes tests covering:
 - synthetic PO integrity
 - invalid-currency rejection
 - PostgreSQL/Neon URL normalization
+- ETL audit-record creation and finalization
+- successful and failed run-status handling
+- partial row-count preservation on failure
 
 Run locally with:
 
@@ -362,7 +376,7 @@ This project demonstrates an end-to-end workflow rather than a dashboard-only ex
 
 ### Potential enhancements
 
-- [ ] ETL run-audit table with row counts and run status
+- [x] ETL run-audit table with row counts and run status
 - [ ] automated freshness SLA check
 - [ ] Bronze-to-Silver reconciliation logging
 - [ ] deliberate incremental overlap for upstream FX revisions
