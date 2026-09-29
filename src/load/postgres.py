@@ -30,6 +30,63 @@ def run_sql_file(engine: Engine, path: Path) -> None:
             conn.execute(text(statement))
 
 
+
+def start_etl_run(engine: Engine) -> int:
+    """Create a RUNNING audit record and return its generated run ID."""
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                """
+                INSERT INTO ops.etl_run (status)
+                VALUES ('RUNNING')
+                RETURNING run_id
+                """
+            )
+        )
+        return int(result.scalar_one())
+
+
+def finish_etl_run(
+    engine: Engine,
+    run_id: int,
+    *,
+    status: str,
+    fx_rows_processed: int,
+    macro_rows_processed: int,
+    po_rows_processed: int,
+    error_message: str | None = None,
+) -> None:
+    """Finalize one audit record with status, row counts, and an optional error."""
+    if status not in {"SUCCESS", "FAILED"}:
+        raise ValueError("ETL audit status must be SUCCESS or FAILED.")
+
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                """
+                UPDATE ops.etl_run
+                SET
+                    completed_at_utc = NOW(),
+                    status = :status,
+                    fx_rows_processed = :fx_rows_processed,
+                    macro_rows_processed = :macro_rows_processed,
+                    po_rows_processed = :po_rows_processed,
+                    error_message = :error_message
+                WHERE run_id = :run_id
+                """
+            ),
+            {
+                "run_id": run_id,
+                "status": status,
+                "fx_rows_processed": fx_rows_processed,
+                "macro_rows_processed": macro_rows_processed,
+                "po_rows_processed": po_rows_processed,
+                "error_message": error_message,
+            },
+        )
+        if result.rowcount != 1:
+            raise RuntimeError(f"Expected to update ETL run {run_id}, updated {result.rowcount} rows.")
+
 def load_raw_payload(engine: Engine, source_name: str, endpoint: str, payload: Any) -> None:
     with engine.begin() as conn:
         conn.execute(
