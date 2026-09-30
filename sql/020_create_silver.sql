@@ -1,3 +1,27 @@
+
+CREATE TABLE IF NOT EXISTS silver.supplier (
+    supplier_id TEXT PRIMARY KEY,
+    supplier_name TEXT NOT NULL,
+    country_code CHAR(3) NOT NULL,
+    country_name TEXT NOT NULL,
+    region TEXT NOT NULL,
+    supplier_tier TEXT NOT NULL CHECK (supplier_tier IN ('Strategic','Core')),
+    payment_terms_days INTEGER NOT NULL CHECK (payment_terms_days > 0),
+    is_synthetic BOOLEAN NOT NULL DEFAULT TRUE CHECK (is_synthetic = TRUE),
+    loaded_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS silver.product (
+    product_id TEXT PRIMARY KEY,
+    product_name TEXT NOT NULL,
+    brand_name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    subcategory TEXT NOT NULL,
+    unit_of_measure TEXT NOT NULL CHECK (unit_of_measure IN ('EA','SET','KIT')),
+    is_synthetic BOOLEAN NOT NULL DEFAULT TRUE CHECK (is_synthetic = TRUE),
+    loaded_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS silver.fx_rate (
     rate_date DATE NOT NULL,
     base_currency CHAR(3) NOT NULL,
