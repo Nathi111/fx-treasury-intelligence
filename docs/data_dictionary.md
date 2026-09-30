@@ -21,6 +21,26 @@ Grain: one row per ETL pipeline execution.
 
 The audit row is created before the main ETL/schema work starts, then finalized on success or failure. Partial row counts are retained if a later pipeline stage fails.
 
+### `ops.data_freshness_check`
+
+Grain: one freshness result per dataset/currency/indicator per ETL run.
+
+| Column | Type | Description |
+|---|---|---|
+| `check_id` | BIGSERIAL | Unique freshness-check identifier |
+| `run_id` | BIGINT | Foreign key to `ops.etl_run` |
+| `dataset_name` | TEXT | Checked dataset, e.g. `fx:USD` or `macro:FP.CPI.TOTL.ZG` |
+| `latest_available_date` | DATE | Latest FX observation date when applicable |
+| `latest_available_year` | INTEGER | Latest macro observation year when applicable |
+| `lag_value` | INTEGER | Observed lag in the relevant unit |
+| `tolerance_value` | INTEGER | Configured SLA tolerance |
+| `lag_unit` | TEXT | `business_days` or `years` |
+| `status` | TEXT | `PASS` or `FAIL` |
+| `details` | TEXT | Human-readable freshness result |
+| `checked_at_utc` | TIMESTAMPTZ | UTC timestamp of the check |
+
+FX freshness is evaluated separately for each configured currency. Weekends are excluded from the lag count. Macro freshness is evaluated separately for each configured World Bank indicator using an annual publication-lag tolerance.
+
 ## Bronze layer
 
 ### `bronze.api_payload`

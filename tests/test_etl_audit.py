@@ -73,7 +73,7 @@ def test_main_records_successful_run_counts():
     engine = MagicMock()
     settings = SimpleNamespace(database_url="postgresql://example")
 
-    def successful_run(_engine, _settings, counts):
+    def successful_run(_engine, _settings, counts, _run_id):
         counts.update({"fx": 15, "macro": 8, "po": 180})
 
     with (
@@ -100,7 +100,7 @@ def test_main_records_failed_run_and_preserves_partial_counts():
     engine = MagicMock()
     settings = SimpleNamespace(database_url="postgresql://example")
 
-    def failed_run(_engine, _settings, counts):
+    def failed_run(_engine, _settings, counts, _run_id):
         counts["fx"] = 15
         raise RuntimeError("Data-quality gate failed")
 

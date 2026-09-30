@@ -17,10 +17,19 @@ class Settings:
     world_bank_country: str
     world_bank_start_year: int
     world_bank_indicators: tuple[str, ...]
+    fx_freshness_business_days: int
+    macro_freshness_years: int
 
 
 def _csv_env(name: str, default: str) -> tuple[str, ...]:
     return tuple(x.strip().upper() for x in os.getenv(name, default).split(",") if x.strip())
+
+
+def _non_negative_int_env(name: str, default: str) -> int:
+    value = int(os.getenv(name, default))
+    if value < 0:
+        raise RuntimeError(f"{name} must be zero or greater.")
+    return value
 
 
 def get_settings() -> Settings:
@@ -38,4 +47,6 @@ def get_settings() -> Settings:
             "WORLD_BANK_INDICATORS",
             "FP.CPI.TOTL.ZG,NY.GDP.MKTP.KD.ZG",
         ),
+        fx_freshness_business_days=_non_negative_int_env("FX_FRESHNESS_BUSINESS_DAYS", "1"),
+        macro_freshness_years=_non_negative_int_env("MACRO_FRESHNESS_YEARS", "2"),
     )

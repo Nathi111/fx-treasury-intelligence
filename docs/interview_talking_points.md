@@ -8,7 +8,7 @@ I used the Frankfurter API for live FX history and the World Bank API for South 
 
 The pipeline runs against Neon Postgres and is tested and orchestrated through GitHub Actions. I then connected Power BI directly to the Gold layer and built a star-schema model with four report pages covering executive treasury exposure, currency risk, procurement concentration and macro context.
 
-A key part of the project was reconciliation: I checked Power BI KPIs back to the Gold layer before finalising the report. I also implemented a SQL data-quality gate so the ETL fails if duplicate keys, invalid FX rates or open purchase orders without a current rate are detected.
+A key part of the project was reconciliation: I checked Power BI KPIs back to the Gold layer before finalising the report. I also implemented a SQL data-quality gate, ETL run auditing, and automated freshness SLAs so failed or stale pipeline runs are observable rather than silently publishing bad data.
 
 ## Business problem
 
@@ -76,7 +76,7 @@ For an importer, a negative result is favourable because the current ZAR require
 
 **Question:** What controls did you implement?
 
-**Answer:** I used database constraints, transformation validation, pytest unit tests and a Gold SQL quality view. The quality view checks non-positive FX rates, duplicate business keys, duplicate PO IDs and open POs without an FX rate. The pipeline raises an exception if the view returns failures.
+**Answer:** I used database constraints, transformation validation, pytest unit tests and a Gold SQL quality view. The quality view checks non-positive FX rates, duplicate business keys, duplicate PO IDs and open POs without an FX rate. I also added per-run freshness checks: each FX currency is tested using business-day lag and each annual macro indicator is tested against a configurable publication-lag tolerance. Results are stored against the ETL run, and the pipeline fails if either quality or freshness controls fail.
 
 ## Automation
 
@@ -90,15 +90,16 @@ For an importer, a negative result is favourable because the current ZAR require
 - Received POs do not show realized FX variance because settlement rates are not modeled yet.
 - The current incremental FX load could be hardened with a small overlap window for provider revisions.
 
-## What I would add in production
+## What I would add next in production
 
-1. ETL-run audit table with run ID, timestamps, status and row counts.
-2. Data-freshness SLA and automated alerting.
-3. Bronze-to-Silver reconciliation logging.
-4. A 3–7 day incremental extraction overlap to capture revised upstream observations.
-5. Settlement rates and realized/unrealized FX variance.
-6. Richer supplier/product master data and commercial hierarchies.
-7. Power BI Service deployment with controlled refresh and access governance.
+ETL run auditing and data-freshness SLAs are already implemented. The next production additions would be:
+
+1. Bronze-to-Silver reconciliation logging.
+2. Alert delivery for failed or stale runs.
+3. A 3–7 day incremental extraction overlap to capture revised upstream observations.
+4. Settlement rates and realized/unrealized FX variance.
+5. Richer supplier/product master data and commercial hierarchies.
+6. Power BI Service deployment with controlled refresh and access governance.
 
 ## Strong technical follow-up questions to expect
 

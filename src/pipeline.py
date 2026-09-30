@@ -24,6 +24,7 @@ from src.load.postgres import (
 from src.transform.fx import transform_fx_rates
 from src.transform.macro import transform_world_bank
 from src.transform.purchase_orders import transform_purchase_orders
+from src.quality.freshness import collect_freshness_results, persist_freshness_results
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 LOGGER = logging.getLogger("fx-treasury-etl")
@@ -34,6 +35,7 @@ def bootstrap_audit_database(engine) -> None:
     for filename in (
         "001_create_schemas.sql",
         "005_create_ops.sql",
+        "006_create_freshness.sql",
     ):
         run_sql_file(engine, ROOT / "sql" / filename)
 
@@ -54,7 +56,21 @@ def get_fx_incremental_start(engine, configured_start: date) -> date:
     return latest or configured_start
 
 
-def run_pipeline(engine, settings, counts: dict[str, int]) -> None:
+def run_freshness_gate(engine, settings, run_id: int, as_of_date: date) -> None:
+    results = collect_freshness_results(engine, settings, as_of_date)
+    persist_freshness_results(engine, run_id, results)
+
+    for result in results:
+        log_fn = LOGGER.info if result.status == "PASS" else LOGGER.error
+        log_fn("Freshness %s: %s - %s", result.status, result.dataset_name, result.details)
+
+    failures = [result for result in results if result.status == "FAIL"]
+    if failures:
+        failed_datasets = ", ".join(result.dataset_name for result in failures)
+        raise RuntimeError(f"Data freshness SLA failed for: {failed_datasets}.")
+
+
+def run_pipeline(engine, settings, counts: dict[str, int], run_id: int) -> None:
     bootstrap_database(engine)
 
     today = date.today()
@@ -86,6 +102,8 @@ def run_pipeline(engine, settings, counts: dict[str, int]) -> None:
     if failures:
         raise RuntimeError(f"Data-quality gate failed with {failures} issue(s).")
 
+    run_freshness_gate(engine, settings, run_id, today)
+
 
 def main() -> None:
     settings = get_settings()
@@ -100,7 +118,7 @@ def main() -> None:
     LOGGER.info("Started ETL run %s", run_id)
 
     try:
-        run_pipeline(engine, settings, counts)
+        run_pipeline(engine, settings, counts, run_id)
     except Exception as exc:
         error_message = f"{type(exc).__name__}: {exc}"[:4000]
         try:
