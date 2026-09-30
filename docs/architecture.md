@@ -23,6 +23,9 @@ flowchart LR
     G --> F1[PO Exposure Fact]
     G --> V1[FX / Macro Views]
     G --> Q[Data Quality Gate]
+    S1 --> FR[Freshness SLA]
+    S2 --> FR
+    FR --> O[(ops.data_freshness_check)]
 
     D1 --> P[Power BI]
     F1 --> P
@@ -30,6 +33,8 @@ flowchart LR
 
     Q -->|0 failures| P
     Q -->|failures found| X[Pipeline fails]
+    FR -->|within SLA| P
+    FR -->|stale| X
 
     GH[GitHub Actions] --> E
 ```
@@ -54,6 +59,7 @@ flowchart LR
 - **April-to-March fiscal attributes** are created upstream in `gold.dim_date`.
 - **Gold SQL views** keep business rules upstream so Power Query remains intentionally light.
 - **Data quality is a pipeline gate**: the ETL fails when `gold.v_data_quality_failures` returns any row.
+- **Freshness is also a pipeline gate**: FX is checked by business-day lag per currency, while annual World Bank indicators use a configurable year-lag tolerance. Results are retained in `ops.data_freshness_check`.
 - **GitHub Actions** runs automated tests before ETL execution. The repository secret `DATABASEURL` is exposed to Python as `DATABASE_URL`.
 
 ## Power BI semantic model
