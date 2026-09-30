@@ -103,18 +103,27 @@ SELECT
     po.product_id,
     po.order_date,
     po.expected_arrival_date,
-    po.settlement_date,
     po.currency AS currency_code,
     po.status,
     po.foreign_value,
     po.budget_fx_rate,
-    po.settlement_fx_rate,
     po.foreign_value * po.budget_fx_rate AS budget_zar_value,
     CASE WHEN po.status = 'Open' THEN fx.rate_date END AS current_fx_rate_date,
     CASE WHEN po.status = 'Open' THEN fx.zar_per_unit END AS current_fx_rate,
     CASE WHEN po.status = 'Open'
         THEN po.foreign_value * fx.zar_per_unit
     END AS current_zar_value,
+    CASE WHEN po.status = 'Open'
+        THEN (po.foreign_value * fx.zar_per_unit) - (po.foreign_value * po.budget_fx_rate)
+    END AS fx_variance_zar,
+    CASE
+        WHEN po.status <> 'Open' OR po.budget_fx_rate = 0 THEN NULL
+        ELSE (fx.zar_per_unit / po.budget_fx_rate) - 1
+    END AS fx_variance_pct,
+    CASE WHEN po.status = 'Open' THEN po.foreign_value * fx.zar_per_unit ELSE 0 END AS open_exposure_zar,
+    po.expected_arrival_date - CURRENT_DATE AS days_to_arrival,
+    po.settlement_date,
+    po.settlement_fx_rate,
     CASE WHEN po.status = 'Received'
         THEN po.foreign_value * po.settlement_fx_rate
     END AS settled_zar_value,
@@ -131,16 +140,7 @@ SELECT
     CASE
         WHEN po.status <> 'Received' OR po.budget_fx_rate = 0 THEN NULL
         ELSE (po.settlement_fx_rate / po.budget_fx_rate) - 1
-    END AS realized_fx_variance_pct,
-    CASE WHEN po.status = 'Open'
-        THEN (po.foreign_value * fx.zar_per_unit) - (po.foreign_value * po.budget_fx_rate)
-    END AS fx_variance_zar,
-    CASE
-        WHEN po.status <> 'Open' OR po.budget_fx_rate = 0 THEN NULL
-        ELSE (fx.zar_per_unit / po.budget_fx_rate) - 1
-    END AS fx_variance_pct,
-    CASE WHEN po.status = 'Open' THEN po.foreign_value * fx.zar_per_unit ELSE 0 END AS open_exposure_zar,
-    po.expected_arrival_date - CURRENT_DATE AS days_to_arrival
+    END AS realized_fx_variance_pct
 FROM silver.purchase_order po
 LEFT JOIN gold.v_latest_fx_rates fx
     ON fx.currency_code = po.currency
