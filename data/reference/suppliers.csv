@@ -1,0 +1,5 @@
+supplier_id,supplier_name,country_code,country_name,region,supplier_tier,payment_terms_days,is_synthetic
+SUP-UK-01,Northbridge Components Ltd,GBR,United Kingdom,Europe,Strategic,60,true
+SUP-US-01,Atlantic Industrial Supply Inc,USA,United States,North America,Core,45,true
+SUP-EU-01,Rheinmark Manufacturing GmbH,DEU,Germany,Europe,Strategic,60,true
+SUP-EU-02,Iberia Packaging Solutions SL,ESP,Spain,Europe,Core,45,true
