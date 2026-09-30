@@ -63,7 +63,7 @@ flowchart LR
 - **PostgreSQL `ON CONFLICT` upserts** make reruns idempotent and safe for scheduled execution.
 - **Incremental FX extraction deliberately overlaps by seven calendar days by default** so revised upstream observations can be re-fetched and safely updated without duplicate business keys. The overlap is configurable and cannot move before the initial FX start date.
 - **FX inversion is explicit**: source observations are converted to ZAR per unit of USD, GBP or EUR before reporting.
-- **Synthetic purchase orders** provide the commercial scenario without using confidential employer data.
+- **Synthetic purchase orders** provide the commercial scenario without using confidential employer data. Received POs include deterministic settlement dates/rates so realized variance can be separated from open unrealized exposure.
 - **April-to-March fiscal attributes** are created upstream in `gold.dim_date`.
 - **Gold SQL views** keep business rules upstream so Power Query remains intentionally light.
 - **Data quality is a pipeline gate**: the ETL fails when `gold.v_data_quality_failures` returns any row.
