@@ -33,6 +33,19 @@ CREATE TABLE IF NOT EXISTS silver.purchase_order (
     foreign_value NUMERIC(18,2) NOT NULL CHECK (foreign_value > 0),
     budget_fx_rate NUMERIC(18,6) NOT NULL CHECK (budget_fx_rate > 0),
     status TEXT NOT NULL CHECK (status IN ('Open','Received')),
+    settlement_date DATE,
+    settlement_fx_rate NUMERIC(18,6),
     loaded_at_utc TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CHECK (expected_arrival_date >= order_date)
+    CHECK (expected_arrival_date >= order_date),
+    CONSTRAINT purchase_order_settlement_consistency CHECK (
+        (status = 'Open' AND settlement_date IS NULL AND settlement_fx_rate IS NULL)
+        OR
+        (
+            status = 'Received'
+            AND settlement_date IS NOT NULL
+            AND settlement_fx_rate IS NOT NULL
+            AND settlement_fx_rate > 0
+            AND settlement_date >= order_date
+        )
+    )
 )
