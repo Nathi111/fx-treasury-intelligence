@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from sqlalchemy import text
@@ -56,10 +56,20 @@ def bootstrap_database(engine) -> None:
         run_sql_file(engine, ROOT / "sql" / filename)
 
 
-def get_fx_incremental_start(engine, configured_start: date) -> date:
+def get_fx_incremental_start(
+    engine,
+    configured_start: date,
+    overlap_days: int,
+) -> tuple[date, date | None]:
+    """Return overlap-aware FX extraction start and latest stored FX date."""
     with engine.connect() as conn:
         latest = conn.execute(text("SELECT MAX(rate_date) FROM silver.fx_rate")).scalar_one_or_none()
-    return latest or configured_start
+
+    if latest is None:
+        return configured_start, None
+
+    overlap_start = latest - timedelta(days=overlap_days)
+    return max(configured_start, overlap_start), latest
 
 
 def run_freshness_gate(engine, settings, run_id: int, as_of_date: date) -> None:
@@ -113,8 +123,25 @@ def run_pipeline(engine, settings, counts: dict[str, int], run_id: int) -> None:
     bootstrap_database(engine)
 
     today = date.today()
-    fx_start = get_fx_incremental_start(engine, settings.fx_start_date)
-    LOGGER.info("Extracting FX data from %s to %s", fx_start, today)
+    fx_start, latest_fx_date = get_fx_incremental_start(
+        engine,
+        settings.fx_start_date,
+        settings.fx_overlap_days,
+    )
+    if latest_fx_date is None:
+        LOGGER.info(
+            "No stored FX data found; extracting from configured start %s to %s",
+            fx_start,
+            today,
+        )
+    else:
+        LOGGER.info(
+            "Latest stored FX date: %s; overlap window: %s day(s); extracting from %s to %s",
+            latest_fx_date,
+            settings.fx_overlap_days,
+            fx_start,
+            today,
+        )
 
     raw_fx = fetch_fx_rates(fx_start, today, settings.fx_quotes)
     load_raw_payload(engine, "frankfurter", FX_URL, raw_fx)

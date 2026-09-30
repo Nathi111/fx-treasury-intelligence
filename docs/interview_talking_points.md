@@ -30,7 +30,7 @@ A key part of the project was reconciliation: I checked Power BI KPIs back to th
 
 **Question:** What happens if the pipeline runs twice?
 
-**Answer:** Silver loads use PostgreSQL `ON CONFLICT` upserts against stable business keys. Re-running the pipeline updates or reuses the same keys rather than creating duplicates. The quality view also checks for duplicate business keys.
+**Answer:** Silver loads use PostgreSQL `ON CONFLICT` upserts against stable business keys. Re-running the pipeline updates or reuses the same keys rather than creating duplicates. For FX specifically, the incremental load deliberately re-fetches the previous seven calendar days by default so upstream revisions can be captured, while the upsert prevents duplicate date/currency records. The quality view also checks for duplicate business keys.
 
 ## FX-rate transformation
 
@@ -88,17 +88,16 @@ For an importer, a negative result is favourable because the current ZAR require
 - Supplier and product dimensions intentionally start simple and can be enriched later.
 - Macro data is annual, so it is kept at its natural grain.
 - Received POs do not show realized FX variance because settlement rates are not modeled yet.
-- The current incremental FX load could be hardened with a small overlap window for provider revisions.
+- The FX incremental load deliberately re-fetches a configurable seven-day overlap window to capture provider revisions while relying on idempotent upserts.
 
 ## What I would add next in production
 
 ETL run auditing and data-freshness SLAs are already implemented. The next production additions would be:
 
 1. Alert delivery for failed, stale or unreconciled runs.
-2. A 3–7 day incremental extraction overlap to capture revised upstream observations.
-3. Settlement rates and realized/unrealized FX variance.
-4. Richer supplier/product master data and commercial hierarchies.
-5. Power BI Service deployment with controlled refresh and access governance.
+2. Settlement rates and realized/unrealized FX variance.
+3. Richer supplier/product master data and commercial hierarchies.
+4. Power BI Service deployment with controlled refresh and access governance.
 
 ## Strong technical follow-up questions to expect
 
