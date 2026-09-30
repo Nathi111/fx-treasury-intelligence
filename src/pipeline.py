@@ -19,11 +19,14 @@ from src.load.postgres import (
     start_etl_run,
     upsert_fx,
     upsert_macro,
+    upsert_products,
     upsert_purchase_orders,
+    upsert_suppliers,
 )
 from src.transform.fx import transform_fx_rates
 from src.transform.macro import transform_world_bank
 from src.transform.purchase_orders import transform_purchase_orders
+from src.transform.reference import transform_products, transform_suppliers
 from src.quality.freshness import collect_freshness_results, persist_freshness_results
 from src.quality.reconciliation import (
     fx_filter_and_duplicate_counts,
@@ -180,6 +183,18 @@ def run_pipeline(engine, settings, counts: dict[str, int], run_id: int) -> None:
         filtered_record_count=macro_filtered,
         deduplicated_record_count=macro_deduplicated,
         loaded_record_count=counts["macro"],
+    )
+
+    supplier_path = ROOT / "data" / "reference" / "suppliers.csv"
+    product_path = ROOT / "data" / "reference" / "products.csv"
+    supplier_df = transform_suppliers(supplier_path)
+    product_df = transform_products(product_path)
+    supplier_count = upsert_suppliers(engine, supplier_df)
+    product_count = upsert_products(engine, product_df)
+    LOGGER.info(
+        "Loaded synthetic reference masters: %s suppliers, %s products",
+        supplier_count,
+        product_count,
     )
 
     po_path = ROOT / "data" / "reference" / "purchase_orders.csv"

@@ -7,6 +7,7 @@ flowchart LR
     A[Frankfurter FX API] --> E[Python Extractors]
     B[World Bank Indicators API] --> E
     C[Synthetic Purchase Orders] --> T[Validation / Transform]
+    M[Synthetic Supplier / Product Masters] --> T
 
     E --> BR[(Bronze<br/>bronze.api_payload)]
     BR --> T
@@ -14,6 +15,8 @@ flowchart LR
     T --> S1[(Silver<br/>silver.fx_rate)]
     T --> S2[(Silver<br/>silver.macro_indicator)]
     T --> S3[(Silver<br/>silver.purchase_order)]
+    T --> S4[(Silver<br/>silver.supplier)]
+    T --> S5[(Silver<br/>silver.product)]
 
     BR --> RC[Bronze-to-Silver Reconciliation]
     S1 --> RC
@@ -23,6 +26,8 @@ flowchart LR
     S1 --> G[Gold SQL Layer]
     S2 --> G
     S3 --> G
+    S4 --> G
+    S5 --> G
 
     G --> D1[Dimensions]
     G --> F1[PO Exposure Fact]
@@ -63,7 +68,8 @@ flowchart LR
 - **PostgreSQL `ON CONFLICT` upserts** make reruns idempotent and safe for scheduled execution.
 - **Incremental FX extraction deliberately overlaps by seven calendar days by default** so revised upstream observations can be re-fetched and safely updated without duplicate business keys. The overlap is configurable and cannot move before the initial FX start date.
 - **FX inversion is explicit**: source observations are converted to ZAR per unit of USD, GBP or EUR before reporting.
-- **Synthetic purchase orders** provide the commercial scenario without using confidential employer data. Received POs include deterministic settlement dates/rates so realized variance can be separated from open unrealized exposure.
+- **Synthetic procurement data** provides the commercial scenario without using confidential employer data. Supplier/product masters carry explicit synthetic-provenance flags, while received POs include deterministic settlement dates/rates.
+- **Supplier and product dimensions use separate master tables** rather than repeating descriptions on the PO fact. Stable IDs preserve the existing star-schema relationships while business-friendly attributes support richer Power BI analysis.
 - **April-to-March fiscal attributes** are created upstream in `gold.dim_date`.
 - **Gold SQL views** keep business rules upstream so Power Query remains intentionally light.
 - **Data quality is a pipeline gate**: the ETL fails when `gold.v_data_quality_failures` returns any row.

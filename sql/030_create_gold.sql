@@ -45,14 +45,27 @@ SELECT DISTINCT
 FROM silver.purchase_order;
 
 CREATE OR REPLACE VIEW gold.dim_supplier AS
-SELECT DISTINCT
-    supplier_id
-FROM silver.purchase_order;
+SELECT
+    supplier_id,
+    supplier_name,
+    country_code,
+    country_name,
+    region,
+    supplier_tier,
+    payment_terms_days,
+    is_synthetic
+FROM silver.supplier;
 
 CREATE OR REPLACE VIEW gold.dim_product AS
-SELECT DISTINCT
-    product_id
-FROM silver.purchase_order;
+SELECT
+    product_id,
+    product_name,
+    brand_name,
+    category,
+    subcategory,
+    unit_of_measure,
+    is_synthetic
+FROM silver.product;
 
 CREATE OR REPLACE VIEW gold.dim_date AS
 SELECT

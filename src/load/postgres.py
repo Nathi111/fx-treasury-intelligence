@@ -159,6 +159,65 @@ def upsert_macro(engine: Engine, df: pd.DataFrame) -> int:
     return len(rows)
 
 
+def upsert_suppliers(engine: Engine, df: pd.DataFrame) -> int:
+    if df.empty:
+        return 0
+    rows = df.to_dict(orient="records")
+    sql = text(
+        """
+        INSERT INTO silver.supplier (
+            supplier_id, supplier_name, country_code, country_name, region,
+            supplier_tier, payment_terms_days, is_synthetic
+        ) VALUES (
+            :supplier_id, :supplier_name, :country_code, :country_name, :region,
+            :supplier_tier, :payment_terms_days, :is_synthetic
+        )
+        ON CONFLICT (supplier_id)
+        DO UPDATE SET
+            supplier_name = EXCLUDED.supplier_name,
+            country_code = EXCLUDED.country_code,
+            country_name = EXCLUDED.country_name,
+            region = EXCLUDED.region,
+            supplier_tier = EXCLUDED.supplier_tier,
+            payment_terms_days = EXCLUDED.payment_terms_days,
+            is_synthetic = EXCLUDED.is_synthetic,
+            loaded_at_utc = NOW()
+        """
+    )
+    with engine.begin() as conn:
+        conn.execute(sql, rows)
+    return len(rows)
+
+
+def upsert_products(engine: Engine, df: pd.DataFrame) -> int:
+    if df.empty:
+        return 0
+    rows = df.to_dict(orient="records")
+    sql = text(
+        """
+        INSERT INTO silver.product (
+            product_id, product_name, brand_name, category, subcategory,
+            unit_of_measure, is_synthetic
+        ) VALUES (
+            :product_id, :product_name, :brand_name, :category, :subcategory,
+            :unit_of_measure, :is_synthetic
+        )
+        ON CONFLICT (product_id)
+        DO UPDATE SET
+            product_name = EXCLUDED.product_name,
+            brand_name = EXCLUDED.brand_name,
+            category = EXCLUDED.category,
+            subcategory = EXCLUDED.subcategory,
+            unit_of_measure = EXCLUDED.unit_of_measure,
+            is_synthetic = EXCLUDED.is_synthetic,
+            loaded_at_utc = NOW()
+        """
+    )
+    with engine.begin() as conn:
+        conn.execute(sql, rows)
+    return len(rows)
+
+
 def upsert_purchase_orders(engine: Engine, df: pd.DataFrame) -> int:
     if df.empty:
         return 0

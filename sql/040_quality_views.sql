@@ -75,3 +75,21 @@ FROM silver.purchase_order
 WHERE status = 'Received'
   AND settlement_fx_rate <= 0
 HAVING COUNT(*) > 0
+
+UNION ALL
+
+SELECT 'purchase_order_unknown_supplier', COUNT(*)::BIGINT
+FROM silver.purchase_order po
+LEFT JOIN silver.supplier s
+    ON s.supplier_id = po.supplier_id
+WHERE s.supplier_id IS NULL
+HAVING COUNT(*) > 0
+
+UNION ALL
+
+SELECT 'purchase_order_unknown_product', COUNT(*)::BIGINT
+FROM silver.purchase_order po
+LEFT JOIN silver.product p
+    ON p.product_id = po.product_id
+WHERE p.product_id IS NULL
+HAVING COUNT(*) > 0

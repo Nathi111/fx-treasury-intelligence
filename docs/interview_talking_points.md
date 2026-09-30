@@ -60,7 +60,7 @@ For an importer, a negative result is favourable because the current ZAR require
 
 **Question:** How did you model the report?
 
-**Answer:** The purchase-order exposure view is the primary fact, filtered by date, currency, supplier and product dimensions. The FX-rate view acts as a second fact sharing date and currency. Macro indicators are annual grain and remain separate rather than being forced into a daily relationship. Relationships use one-to-many, single-direction filtering.
+**Answer:** The purchase-order exposure view is the primary fact, filtered by date, currency, supplier and product dimensions. Supplier and product are separate synthetic master tables with stable keys and business-friendly attributes, so the fact stays narrow while Power BI can analyse exposure by supplier country/tier and product brand/category. The FX-rate view acts as a second fact sharing date and currency. Macro indicators remain at annual grain. Relationships use one-to-many, single-direction filtering.
 
 ## April-to-March fiscal year
 
@@ -85,9 +85,8 @@ For an importer, a negative result is favourable because the current ZAR require
 ## Key trade-offs
 
 - Public API data is real; procurement data is synthetic so the project can be shared safely.
-- Supplier and product dimensions intentionally start simple and can be enriched later.
+- Supplier and product master attributes are synthetic and explicitly flagged so the richer reporting model does not imply real commercial master data.
 - Macro data is annual, so it is kept at its natural grain.
-- Received POs do not show realized FX variance because settlement rates are not modeled yet.
 - The FX incremental load deliberately re-fetches a configurable seven-day overlap window to capture provider revisions while relying on idempotent upserts.
 
 ## What I would add next in production
@@ -95,8 +94,7 @@ For an importer, a negative result is favourable because the current ZAR require
 ETL run auditing and data-freshness SLAs are already implemented. The next production additions would be:
 
 1. Alert delivery for failed, stale or unreconciled runs.
-2. Richer supplier/product master data and commercial hierarchies.
-3. Power BI Service deployment with controlled refresh and access governance.
+2. Power BI Service deployment with controlled refresh and access governance.
 
 ## Strong technical follow-up questions to expect
 
