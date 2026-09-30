@@ -20,6 +20,8 @@ def transform_purchase_orders(path: Path) -> pd.DataFrame:
         "foreign_value",
         "budget_fx_rate",
         "status",
+        "settlement_date",
+        "settlement_fx_rate",
     }
     missing = required.difference(df.columns)
     if missing:
@@ -30,8 +32,10 @@ def transform_purchase_orders(path: Path) -> pd.DataFrame:
     df["status"] = df["status"].str.strip()
     df["order_date"] = pd.to_datetime(df["order_date"], errors="raise").dt.date
     df["expected_arrival_date"] = pd.to_datetime(df["expected_arrival_date"], errors="raise").dt.date
+    df["settlement_date"] = pd.to_datetime(df["settlement_date"], errors="coerce").dt.date
     df["foreign_value"] = pd.to_numeric(df["foreign_value"], errors="raise")
     df["budget_fx_rate"] = pd.to_numeric(df["budget_fx_rate"], errors="raise")
+    df["settlement_fx_rate"] = pd.to_numeric(df["settlement_fx_rate"], errors="coerce")
 
     invalid_currency = sorted(set(df["currency"]) - ALLOWED_CURRENCIES)
     if invalid_currency:
@@ -47,7 +51,37 @@ def transform_purchase_orders(path: Path) -> pd.DataFrame:
     if (df["expected_arrival_date"] < df["order_date"]).any():
         raise ValueError("expected_arrival_date cannot be before order_date")
 
+    open_mask = df["status"].eq("Open")
+    received_mask = df["status"].eq("Received")
+
+    if df.loc[open_mask, "settlement_date"].notna().any() or df.loc[
+        open_mask, "settlement_fx_rate"
+    ].notna().any():
+        raise ValueError("Open purchase orders cannot contain settlement data")
+
+    if df.loc[received_mask, "settlement_date"].isna().any() or df.loc[
+        received_mask, "settlement_fx_rate"
+    ].isna().any():
+        raise ValueError("Received purchase orders require settlement_date and settlement_fx_rate")
+
+    if (df.loc[received_mask, "settlement_fx_rate"] <= 0).any():
+        raise ValueError("settlement_fx_rate must be positive for received purchase orders")
+
+    invalid_settlement_date = received_mask & (
+        df["settlement_date"] < df["order_date"]
+    )
+    if invalid_settlement_date.any():
+        raise ValueError("settlement_date cannot be before order_date")
+
     if df["po_id"].duplicated().any():
         raise ValueError("Duplicate purchase-order IDs found")
+
+    # psycopg expects Python None rather than pandas NaN/NaT for nullable fields.
+    df["settlement_date"] = df["settlement_date"].astype(object).where(
+        df["settlement_date"].notna(), None
+    )
+    df["settlement_fx_rate"] = df["settlement_fx_rate"].astype(object).where(
+        df["settlement_fx_rate"].notna(), None
+    )
 
     return df.sort_values("order_date").reset_index(drop=True)
