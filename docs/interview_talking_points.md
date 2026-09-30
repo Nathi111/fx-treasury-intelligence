@@ -76,7 +76,7 @@ For an importer, a negative result is favourable because the current ZAR require
 
 **Question:** What controls did you implement?
 
-**Answer:** I used database constraints, transformation validation, pytest unit tests and a Gold SQL quality view. The quality view checks non-positive FX rates, duplicate business keys, duplicate PO IDs and open POs without an FX rate. I also added per-run freshness checks: each FX currency is tested using business-day lag and each annual macro indicator is tested against a configurable publication-lag tolerance. Results are stored against the ETL run, and the pipeline fails if either quality or freshness controls fail.
+**Answer:** I used database constraints, transformation validation, pytest unit tests and a Gold SQL quality view. The quality view checks non-positive FX rates, duplicate business keys, duplicate PO IDs and open POs without an FX rate. I also added per-run freshness checks and Bronze-to-Silver reconciliation. Each FX currency is tested using business-day lag, annual macro indicators use a configurable publication-lag tolerance, and the API pipeline reconciles extracted, filtered, deduplicated, transformed and loaded record counts. Results are stored against the ETL run, and unexplained reconciliation variance fails the pipeline rather than being silently ignored.
 
 ## Automation
 
@@ -94,12 +94,11 @@ For an importer, a negative result is favourable because the current ZAR require
 
 ETL run auditing and data-freshness SLAs are already implemented. The next production additions would be:
 
-1. Bronze-to-Silver reconciliation logging.
-2. Alert delivery for failed or stale runs.
-3. A 3–7 day incremental extraction overlap to capture revised upstream observations.
-4. Settlement rates and realized/unrealized FX variance.
-5. Richer supplier/product master data and commercial hierarchies.
-6. Power BI Service deployment with controlled refresh and access governance.
+1. Alert delivery for failed, stale or unreconciled runs.
+2. A 3–7 day incremental extraction overlap to capture revised upstream observations.
+3. Settlement rates and realized/unrealized FX variance.
+4. Richer supplier/product master data and commercial hierarchies.
+5. Power BI Service deployment with controlled refresh and access governance.
 
 ## Strong technical follow-up questions to expect
 
