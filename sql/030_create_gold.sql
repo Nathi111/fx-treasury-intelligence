@@ -109,7 +109,7 @@ SELECT
     po.budget_fx_rate,
     po.foreign_value * po.budget_fx_rate AS budget_zar_value,
     CASE WHEN po.status = 'Open' THEN fx.rate_date END AS current_fx_rate_date,
-    CASE WHEN po.status = 'Open' THEN fx.zar_per_unit END AS current_fx_rate,
+    (CASE WHEN po.status = 'Open' THEN fx.zar_per_unit END)::NUMERIC(18,8) AS current_fx_rate,
     CASE WHEN po.status = 'Open'
         THEN po.foreign_value * fx.zar_per_unit
     END AS current_zar_value,
