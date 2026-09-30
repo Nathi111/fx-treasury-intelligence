@@ -64,9 +64,9 @@ Public macroeconomic data for South Africa:
 
 ### Synthetic procurement data
 
-A deterministic synthetic purchase-order dataset is included for the commercial exposure scenario.
+Deterministic synthetic procurement data is included for the commercial exposure scenario. It contains a purchase-order fact plus separate supplier and product reference masters. All supplier/product names, brands and commercial attributes are fictional and explicitly flagged as synthetic.
 
-It contains:
+The purchase-order dataset contains:
 
 - purchase order ID
 - supplier ID
@@ -109,6 +109,8 @@ Typed, validated and deduplicated analytical tables:
 ~~~text
 silver.fx_rate
 silver.macro_indicator
+silver.supplier
+silver.product
 silver.purchase_order
 ~~~
 
@@ -259,6 +261,9 @@ The pipeline includes:
 - settlement-date/rate validation for received purchase orders
 - separate realized and unrealized FX variance fields in the Gold exposure fact
 - backward-compatible open-exposure variance fields for the existing Power BI report
+- enriched synthetic supplier and product masters with business-friendly names and hierarchies
+- referential-integrity checks from purchase orders to supplier/product masters
+- stable supplier/product keys so existing Power BI relationships remain unchanged
 - Power BI KPI reconciliation against the Gold layer
 
 gold.v_data_quality_failures is retained as an operational control rather than loaded into the business-facing Power BI model.
@@ -298,6 +303,9 @@ The project currently includes tests covering:
 - idempotent upsert behaviour for overlapping FX rows
 - settlement lifecycle validation
 - realized/unrealized FX variance model compatibility
+- enriched dimension validation and synthetic provenance
+- supplier/product master coverage of all PO foreign keys
+- idempotent dimension upserts using stable keys
 
 Run locally with:
 
@@ -408,5 +416,5 @@ This project demonstrates an end-to-end workflow rather than a dashboard-only ex
 - [x] Bronze-to-Silver reconciliation logging
 - [x] deliberate incremental overlap for upstream FX revisions
 - [x] realized FX variance using settlement rates
-- [ ] richer supplier and product attributes
+- [x] richer supplier and product attributes
 - [ ] Power BI Service deployment and scheduled semantic-model refresh
