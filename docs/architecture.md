@@ -15,6 +15,11 @@ flowchart LR
     T --> S2[(Silver<br/>silver.macro_indicator)]
     T --> S3[(Silver<br/>silver.purchase_order)]
 
+    BR --> RC[Bronze-to-Silver Reconciliation]
+    S1 --> RC
+    S2 --> RC
+    RC --> O2[(ops.etl_reconciliation)]
+
     S1 --> G[Gold SQL Layer]
     S2 --> G
     S3 --> G
@@ -35,6 +40,8 @@ flowchart LR
     Q -->|failures found| X[Pipeline fails]
     FR -->|within SLA| P
     FR -->|stale| X
+    RC -->|balanced| G
+    RC -->|variance| X
 
     GH[GitHub Actions] --> E
 ```
@@ -60,6 +67,7 @@ flowchart LR
 - **Gold SQL views** keep business rules upstream so Power Query remains intentionally light.
 - **Data quality is a pipeline gate**: the ETL fails when `gold.v_data_quality_failures` returns any row.
 - **Freshness is also a pipeline gate**: FX is checked by business-day lag per currency, while annual World Bank indicators use a configurable year-lag tolerance. Results are retained in `ops.data_freshness_check`.
+- **Bronze-to-Silver reconciliation is persisted per run**: extracted, filtered, deduplicated, transformed and loaded counts must balance for each API dataset or the pipeline fails.
 - **GitHub Actions** runs automated tests before ETL execution. The repository secret `DATABASEURL` is exposed to Python as `DATABASE_URL`.
 
 ## Power BI semantic model

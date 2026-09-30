@@ -89,9 +89,10 @@ Pipeline-run metadata is stored separately from analytical data:
 ~~~text
 ops.etl_run
 ops.data_freshness_check
+ops.etl_reconciliation
 ~~~
 
-Each execution is recorded with run status, timestamps, processed row counts and any failure message. Freshness results are stored by ETL run for each configured FX currency and macro indicator.
+Each execution is recorded with run status, timestamps, processed row counts and any failure message. Freshness results are stored by ETL run for each configured FX currency and macro indicator. Bronze-to-Silver reconciliation results retain extracted, filtered, deduplicated, transformed and loaded record counts for each API dataset.
 
 ### Bronze
 
@@ -250,6 +251,9 @@ The pipeline includes:
 - macro freshness checks using configurable annual publication lag
 - persisted PASS/FAIL freshness results linked to the ETL run
 - pipeline failure when a configured freshness SLA is breached
+- per-run Bronze-to-Silver source/target reconciliation for FX and macro API data
+- explicit counts for filtered, deduplicated, transformed and upserted records
+- pipeline failure when reconciliation contains unexplained record variance
 - Power BI KPI reconciliation against the Gold layer
 
 gold.v_data_quality_failures is retained as an operational control rather than loaded into the business-facing Power BI model.
@@ -282,6 +286,9 @@ The project currently includes tests covering:
 - weekend-aware FX freshness calculations
 - stale/missing FX and macro freshness failures
 - freshness audit persistence and pipeline-gate behaviour
+- Bronze-to-Silver count balancing
+- filtered/deduplicated record accounting
+- reconciliation persistence and failure gating
 
 Run locally with:
 
@@ -388,7 +395,7 @@ This project demonstrates an end-to-end workflow rather than a dashboard-only ex
 
 - [x] ETL run-audit table with row counts and run status
 - [x] automated freshness SLA check
-- [ ] Bronze-to-Silver reconciliation logging
+- [x] Bronze-to-Silver reconciliation logging
 - [ ] deliberate incremental overlap for upstream FX revisions
 - [ ] realized FX variance using settlement rates
 - [ ] richer supplier and product attributes

@@ -25,6 +25,11 @@ from src.transform.fx import transform_fx_rates
 from src.transform.macro import transform_world_bank
 from src.transform.purchase_orders import transform_purchase_orders
 from src.quality.freshness import collect_freshness_results, persist_freshness_results
+from src.quality.reconciliation import (
+    fx_filter_and_duplicate_counts,
+    macro_filter_and_duplicate_counts,
+    reconcile_and_persist,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 LOGGER = logging.getLogger("fx-treasury-etl")
@@ -36,6 +41,7 @@ def bootstrap_audit_database(engine) -> None:
         "001_create_schemas.sql",
         "005_create_ops.sql",
         "006_create_freshness.sql",
+        "007_create_reconciliation.sql",
     ):
         run_sql_file(engine, ROOT / "sql" / filename)
 
@@ -70,6 +76,39 @@ def run_freshness_gate(engine, settings, run_id: int, as_of_date: date) -> None:
         raise RuntimeError(f"Data freshness SLA failed for: {failed_datasets}.")
 
 
+def record_reconciliation(
+    engine,
+    run_id: int,
+    *,
+    dataset_name: str,
+    extracted_record_count: int,
+    transformed_record_count: int,
+    filtered_record_count: int,
+    deduplicated_record_count: int,
+    loaded_record_count: int,
+) -> None:
+    result = reconcile_and_persist(
+        engine,
+        run_id,
+        dataset_name=dataset_name,
+        extracted_record_count=extracted_record_count,
+        bronze_payload_count=1,
+        transformed_record_count=transformed_record_count,
+        filtered_record_count=filtered_record_count,
+        deduplicated_record_count=deduplicated_record_count,
+        loaded_record_count=loaded_record_count,
+    )
+
+    log_fn = LOGGER.info if result.status == "PASS" else LOGGER.error
+    log_fn("Reconciliation %s: %s - %s", result.status, dataset_name, result.details)
+
+    if result.status == "FAIL":
+        raise RuntimeError(
+            f"Bronze-to-Silver reconciliation failed for {dataset_name} "
+            f"with {result.unexplained_variance_count} unexplained record(s)."
+        )
+
+
 def run_pipeline(engine, settings, counts: dict[str, int], run_id: int) -> None:
     bootstrap_database(engine)
 
@@ -81,6 +120,17 @@ def run_pipeline(engine, settings, counts: dict[str, int], run_id: int) -> None:
     load_raw_payload(engine, "frankfurter", FX_URL, raw_fx)
     fx_df = transform_fx_rates(raw_fx)
     counts["fx"] = upsert_fx(engine, fx_df)
+    fx_filtered, fx_deduplicated = fx_filter_and_duplicate_counts(raw_fx)
+    record_reconciliation(
+        engine,
+        run_id,
+        dataset_name="frankfurter_fx",
+        extracted_record_count=len(raw_fx),
+        transformed_record_count=len(fx_df),
+        filtered_record_count=fx_filtered,
+        deduplicated_record_count=fx_deduplicated,
+        loaded_record_count=counts["fx"],
+    )
 
     LOGGER.info("Extracting World Bank indicators")
     raw_macro = fetch_indicators(
@@ -92,6 +142,17 @@ def run_pipeline(engine, settings, counts: dict[str, int], run_id: int) -> None:
     load_raw_payload(engine, "world_bank", WB_URL, raw_macro)
     macro_df = transform_world_bank(raw_macro)
     counts["macro"] = upsert_macro(engine, macro_df)
+    macro_filtered, macro_deduplicated = macro_filter_and_duplicate_counts(raw_macro)
+    record_reconciliation(
+        engine,
+        run_id,
+        dataset_name="world_bank_macro",
+        extracted_record_count=len(raw_macro),
+        transformed_record_count=len(macro_df),
+        filtered_record_count=macro_filtered,
+        deduplicated_record_count=macro_deduplicated,
+        loaded_record_count=counts["macro"],
+    )
 
     po_path = ROOT / "data" / "reference" / "purchase_orders.csv"
     po_df = transform_purchase_orders(po_path)
