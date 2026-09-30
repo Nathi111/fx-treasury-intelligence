@@ -1,0 +1,13 @@
+product_id,product_name,brand_name,category,subcategory,unit_of_measure,is_synthetic
+SKU-001,Premium Glass Bottle 750ml,Atlas,Packaging,Primary Packaging,EA,true
+SKU-002,Aluminium Closure Cap,Atlas,Packaging,Primary Packaging,EA,true
+SKU-003,Printed Carton Case 6x750ml,Meridian,Packaging,Secondary Packaging,EA,true
+SKU-004,Premium Label Set,Meridian,Packaging,Labelling,SET,true
+SKU-005,Stainless Valve Assembly,Orion,Production Components,Flow Control,EA,true
+SKU-006,Pump Seal Kit,Orion,Production Components,Maintenance Parts,KIT,true
+SKU-007,Temperature Sensor Module,Nova,Production Components,Instrumentation,EA,true
+SKU-008,Conveyor Belt Segment,Nova,Production Components,Material Handling,EA,true
+SKU-009,Filling Nozzle Unit,Apex,Automation Equipment,Filling Equipment,EA,true
+SKU-010,Industrial Barcode Scanner,Apex,Automation Equipment,Traceability,EA,true
+SKU-011,Pallet Wrapper Drive Module,Vector,Automation Equipment,Warehouse Equipment,EA,true
+SKU-012,Quality Inspection Camera,Vector,Automation Equipment,Quality Control,EA,true
