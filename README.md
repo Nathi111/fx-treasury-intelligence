@@ -254,6 +254,8 @@ The pipeline includes:
 - per-run Bronze-to-Silver source/target reconciliation for FX and macro API data
 - explicit counts for filtered, deduplicated, transformed and upserted records
 - pipeline failure when reconciliation contains unexplained record variance
+- configurable seven-day FX overlap to capture revised upstream observations
+- idempotent FX upserts so overlap reruns update existing business keys instead of duplicating them
 - Power BI KPI reconciliation against the Gold layer
 
 gold.v_data_quality_failures is retained as an operational control rather than loaded into the business-facing Power BI model.
@@ -289,6 +291,8 @@ The project currently includes tests covering:
 - Bronze-to-Silver count balancing
 - filtered/deduplicated record accounting
 - reconciliation persistence and failure gating
+- FX incremental overlap boundaries and zero-overlap behaviour
+- idempotent upsert behaviour for overlapping FX rows
 
 Run locally with:
 
@@ -323,6 +327,7 @@ python -m src.pipeline
 | WORLD_BANK_INDICATORS | Comma-separated World Bank indicator codes |
 | FX_FRESHNESS_BUSINESS_DAYS | Maximum accepted weekday lag for each FX currency; default 1 |
 | MACRO_FRESHNESS_YEARS | Maximum accepted year lag for each macro indicator; default 2 |
+| FX_OVERLAP_DAYS | Calendar days re-fetched before the latest stored FX date; default 7 |
 
 ## Repository structure
 
@@ -396,7 +401,7 @@ This project demonstrates an end-to-end workflow rather than a dashboard-only ex
 - [x] ETL run-audit table with row counts and run status
 - [x] automated freshness SLA check
 - [x] Bronze-to-Silver reconciliation logging
-- [ ] deliberate incremental overlap for upstream FX revisions
+- [x] deliberate incremental overlap for upstream FX revisions
 - [ ] realized FX variance using settlement rates
 - [ ] richer supplier and product attributes
 - [ ] Power BI Service deployment and scheduled semantic-model refresh
