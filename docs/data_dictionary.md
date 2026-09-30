@@ -41,6 +41,36 @@ Grain: one freshness result per dataset/currency/indicator per ETL run.
 
 FX freshness is evaluated separately for each configured currency. Weekends are excluded from the lag count. Macro freshness is evaluated separately for each configured World Bank indicator using an annual publication-lag tolerance.
 
+
+### `ops.etl_reconciliation`
+
+Grain: one Bronze-to-Silver reconciliation result per API dataset per ETL run.
+
+| Column | Type | Description |
+|---|---|---|
+| `reconciliation_id` | BIGSERIAL | Unique reconciliation identifier |
+| `run_id` | BIGINT | Foreign key to `ops.etl_run` |
+| `dataset_name` | TEXT | Reconciled API dataset |
+| `extracted_record_count` | INTEGER | Raw records returned by the source API |
+| `bronze_payload_count` | INTEGER | Raw payloads written to Bronze |
+| `transformed_record_count` | INTEGER | Records remaining after filtering/deduplication |
+| `filtered_record_count` | INTEGER | Rows intentionally removed by transform rules |
+| `deduplicated_record_count` | INTEGER | Duplicate business-grain rows removed |
+| `loaded_record_count` | INTEGER | Rows passed to the Silver upsert |
+| `unexplained_variance_count` | INTEGER | Absolute unexplained source/load variance |
+| `status` | TEXT | `PASS` or `FAIL` |
+| `details` | TEXT | Count equation and variance detail |
+| `checked_at_utc` | TIMESTAMPTZ | UTC reconciliation timestamp |
+
+The reconciliation equation is:
+
+```text
+Extracted = Filtered + Deduplicated + Transformed
+Transformed = Loaded
+```
+
+A non-zero unexplained variance produces `FAIL` and stops the pipeline. Synthetic purchase orders are validated separately because they originate from a reference CSV rather than the Bronze API layer.
+
 ## Bronze layer
 
 ### `bronze.api_payload`
