@@ -145,7 +145,7 @@ For this importer scenario:
 - a **negative FX variance** is favourable because the current expected ZAR cost is below budget;
 - a **positive FX variance** is unfavourable because the current expected ZAR cost is above budget.
 
-Only open purchase orders are included in current exposure.
+Only open purchase orders are included in current exposure. Received purchase orders use their stored settlement date and settlement FX rate, allowing realized FX variance to be reported separately from unrealized open exposure.
 
 ## Power BI report
 
@@ -256,6 +256,9 @@ The pipeline includes:
 - pipeline failure when reconciliation contains unexplained record variance
 - configurable seven-day FX overlap to capture revised upstream observations
 - idempotent FX upserts so overlap reruns update existing business keys instead of duplicating them
+- settlement-date/rate validation for received purchase orders
+- separate realized and unrealized FX variance fields in the Gold exposure fact
+- backward-compatible open-exposure variance fields for the existing Power BI report
 - Power BI KPI reconciliation against the Gold layer
 
 gold.v_data_quality_failures is retained as an operational control rather than loaded into the business-facing Power BI model.
@@ -293,6 +296,8 @@ The project currently includes tests covering:
 - reconciliation persistence and failure gating
 - FX incremental overlap boundaries and zero-overlap behaviour
 - idempotent upsert behaviour for overlapping FX rows
+- settlement lifecycle validation
+- realized/unrealized FX variance model compatibility
 
 Run locally with:
 
@@ -402,6 +407,6 @@ This project demonstrates an end-to-end workflow rather than a dashboard-only ex
 - [x] automated freshness SLA check
 - [x] Bronze-to-Silver reconciliation logging
 - [x] deliberate incremental overlap for upstream FX revisions
-- [ ] realized FX variance using settlement rates
+- [x] realized FX variance using settlement rates
 - [ ] richer supplier and product attributes
 - [ ] Power BI Service deployment and scheduled semantic-model refresh

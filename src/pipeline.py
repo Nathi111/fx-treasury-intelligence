@@ -50,6 +50,7 @@ def bootstrap_database(engine) -> None:
     for filename in (
         "010_create_bronze.sql",
         "020_create_silver.sql",
+        "025_add_settlement_fields.sql",
         "030_create_gold.sql",
         "040_quality_views.sql",
     ):
@@ -184,6 +185,7 @@ def run_pipeline(engine, settings, counts: dict[str, int], run_id: int) -> None:
     po_path = ROOT / "data" / "reference" / "purchase_orders.csv"
     po_df = transform_purchase_orders(po_path)
     counts["po"] = upsert_purchase_orders(engine, po_df)
+    run_sql_file(engine, ROOT / "sql" / "026_validate_settlement_constraint.sql")
 
     with engine.connect() as conn:
         failures = conn.execute(text("SELECT COUNT(*) FROM gold.v_data_quality_failures")).scalar_one()

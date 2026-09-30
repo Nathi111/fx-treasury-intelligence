@@ -137,6 +137,8 @@ Grain: one synthetic purchase order.
 | `foreign_value` | NUMERIC(18,2) | Purchase-order value in foreign currency |
 | `budget_fx_rate` | NUMERIC(18,6) | Budgeted ZAR-per-unit FX rate |
 | `status` | TEXT | `Open` or `Received` |
+| `settlement_date` | DATE | Settlement date for received POs; null for open POs |
+| `settlement_fx_rate` | NUMERIC(18,6) | Settled ZAR-per-unit FX rate for received POs |
 | `loaded_at_utc` | TIMESTAMPTZ | Database load timestamp |
 
 Primary key: `po_id`.
@@ -216,15 +218,22 @@ Grain: one purchase order.
 | `product_id` | Product/SKU identifier |
 | `order_date` | PO date |
 | `expected_arrival_date` | Expected goods arrival date |
+| `settlement_date` | Actual/synthetic settlement date for received POs |
 | `currency_code` | Foreign currency |
 | `status` | Open or Received |
 | `foreign_value` | PO value in foreign currency |
 | `budget_fx_rate` | Budgeted ZAR-per-unit rate |
+| `settlement_fx_rate` | Settled ZAR-per-unit rate for received POs |
 | `budget_zar_value` | `foreign_value × budget_fx_rate` |
 | `current_fx_rate_date` | Date of latest FX rate applied |
 | `current_fx_rate` | Latest ZAR-per-unit FX rate |
 | `current_zar_value` | Current ZAR revaluation for open POs |
-| `fx_variance_zar` | `current_zar_value - budget_zar_value` for open POs |
+| `settled_zar_value` | Settled ZAR value for received POs |
+| `unrealized_fx_variance_zar` | Current less budget ZAR value for open POs |
+| `unrealized_fx_variance_pct` | Current-rate variance vs budget for open POs |
+| `realized_fx_variance_zar` | Settled less budget ZAR value for received POs |
+| `realized_fx_variance_pct` | Settlement-rate variance vs budget for received POs |
+| `fx_variance_zar` | Backward-compatible unrealized variance for open POs |
 | `fx_variance_pct` | `current_fx_rate / budget_fx_rate - 1` for open POs |
 | `open_exposure_zar` | Current ZAR value for open POs; zero for received POs |
 | `days_to_arrival` | Expected arrival date minus current date |
@@ -236,7 +245,7 @@ For this importer scenario:
 - **Negative FX variance = favourable** because current expected ZAR cost is below budget.
 - **Positive FX variance = unfavourable** because current expected ZAR cost is above budget.
 
-Received POs are not revalued because the model does not yet contain settlement FX rates.
+Received POs are valued using their settlement FX rate and therefore report realized variance independently of current market rates.
 
 ### `gold.v_data_quality_failures`
 

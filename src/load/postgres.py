@@ -167,10 +167,12 @@ def upsert_purchase_orders(engine: Engine, df: pd.DataFrame) -> int:
         """
         INSERT INTO silver.purchase_order (
             po_id, supplier_id, product_id, order_date, expected_arrival_date,
-            currency, foreign_value, budget_fx_rate, status
+            currency, foreign_value, budget_fx_rate, status,
+            settlement_date, settlement_fx_rate
         ) VALUES (
             :po_id, :supplier_id, :product_id, :order_date, :expected_arrival_date,
-            :currency, :foreign_value, :budget_fx_rate, :status
+            :currency, :foreign_value, :budget_fx_rate, :status,
+            :settlement_date, :settlement_fx_rate
         )
         ON CONFLICT (po_id)
         DO UPDATE SET
@@ -182,6 +184,8 @@ def upsert_purchase_orders(engine: Engine, df: pd.DataFrame) -> int:
             foreign_value = EXCLUDED.foreign_value,
             budget_fx_rate = EXCLUDED.budget_fx_rate,
             status = EXCLUDED.status,
+            settlement_date = EXCLUDED.settlement_date,
+            settlement_fx_rate = EXCLUDED.settlement_fx_rate,
             loaded_at_utc = NOW()
         """
     )

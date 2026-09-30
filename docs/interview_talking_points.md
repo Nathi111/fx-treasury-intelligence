@@ -52,9 +52,9 @@ FX Variance ZAR   = Current ZAR Value - Budget ZAR Value
 
 For an importer, a negative result is favourable because the current ZAR requirement is lower than budget. A positive result is unfavourable.
 
-## Why only open POs are revalued
+## Realized vs unrealized FX variance
 
-**Answer:** The dataset has an order status but no actual settlement FX rate. Revaluing received POs using today's market rate would create a false realized variance, so received POs return null for current revaluation measures. In production I would store settlement date/rate and calculate realized versus unrealized variance separately.
+**Answer:** Open POs are revalued using the latest market rate and report unrealized variance versus budget. Received POs carry a settlement date and settlement FX rate, so their settled ZAR value and realized variance are calculated independently of today's market rate. This avoids mixing open exposure with completed transactions.
 
 ## Power BI model
 
@@ -95,9 +95,8 @@ For an importer, a negative result is favourable because the current ZAR require
 ETL run auditing and data-freshness SLAs are already implemented. The next production additions would be:
 
 1. Alert delivery for failed, stale or unreconciled runs.
-2. Settlement rates and realized/unrealized FX variance.
-3. Richer supplier/product master data and commercial hierarchies.
-4. Power BI Service deployment with controlled refresh and access governance.
+2. Richer supplier/product master data and commercial hierarchies.
+3. Power BI Service deployment with controlled refresh and access governance.
 
 ## Strong technical follow-up questions to expect
 
