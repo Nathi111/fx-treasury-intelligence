@@ -60,3 +60,33 @@ def test_existing_open_variance_columns_remain_for_power_bi_compatibility():
     assert "AS fx_variance_zar" in sql
     assert "AS fx_variance_pct" in sql
     assert "AS open_exposure_zar" in sql
+
+
+def test_gold_view_appends_new_settlement_columns_after_legacy_power_bi_columns():
+    sql = (ROOT / "sql" / "030_create_gold.sql").read_text(encoding="utf-8")
+    fact_sql = sql.split("CREATE OR REPLACE VIEW gold.fact_purchase_order_exposure AS", 1)[1]
+
+    legacy_markers = [
+        "po.po_id",
+        "po.supplier_id",
+        "po.product_id",
+        "po.order_date",
+        "po.expected_arrival_date",
+        "po.currency AS currency_code",
+        "po.status",
+        "po.foreign_value",
+        "po.budget_fx_rate",
+        "AS budget_zar_value",
+        "AS current_fx_rate_date",
+        "AS current_fx_rate",
+        "AS current_zar_value",
+        "AS fx_variance_zar",
+        "AS fx_variance_pct",
+        "AS open_exposure_zar",
+        "AS days_to_arrival",
+    ]
+
+    positions = [fact_sql.index(marker) for marker in legacy_markers]
+    assert positions == sorted(positions)
+    assert fact_sql.index("po.settlement_date") > positions[-1]
+    assert fact_sql.index("AS realized_fx_variance_zar") > fact_sql.index("po.settlement_date")
