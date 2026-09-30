@@ -18,7 +18,7 @@ def test_gold_exposure_view_exposes_realized_and_unrealized_variance():
     assert "unrealized_fx_variance_pct" in sql
     assert "realized_fx_variance_zar" in sql
     assert "realized_fx_variance_pct" in sql
-    assert "CASE WHEN po.status = 'Open' THEN fx.zar_per_unit END AS current_fx_rate" in sql
+    assert "(CASE WHEN po.status = 'Open' THEN fx.zar_per_unit END)::NUMERIC(18,8) AS current_fx_rate" in sql
 
 
 def test_purchase_order_upsert_includes_settlement_fields():
