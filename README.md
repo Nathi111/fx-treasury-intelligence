@@ -88,9 +88,10 @@ Pipeline-run metadata is stored separately from analytical data:
 
 ~~~text
 ops.etl_run
+ops.data_freshness_check
 ~~~
 
-Each execution is recorded with run status, timestamps, processed row counts and any failure message.
+Each execution is recorded with run status, timestamps, processed row counts and any failure message. Freshness results are stored by ETL run for each configured FX currency and macro indicator.
 
 ### Bronze
 
@@ -245,6 +246,10 @@ The pipeline includes:
 - SQL data-quality view
 - pipeline failure when Gold-layer quality checks return failures
 - ETL run auditing with SUCCESS/FAILED status and row counts
+- FX freshness checks using business-day lag per currency
+- macro freshness checks using configurable annual publication lag
+- persisted PASS/FAIL freshness results linked to the ETL run
+- pipeline failure when a configured freshness SLA is breached
 - Power BI KPI reconciliation against the Gold layer
 
 gold.v_data_quality_failures is retained as an operational control rather than loaded into the business-facing Power BI model.
@@ -274,6 +279,9 @@ The project currently includes tests covering:
 - ETL audit-record creation and finalization
 - successful and failed run-status handling
 - partial row-count preservation on failure
+- weekend-aware FX freshness calculations
+- stale/missing FX and macro freshness failures
+- freshness audit persistence and pipeline-gate behaviour
 
 Run locally with:
 
@@ -306,6 +314,8 @@ python -m src.pipeline
 | WORLD_BANK_COUNTRY | World Bank ISO3 country code; defaults to ZAF |
 | WORLD_BANK_START_YEAR | First macroeconomic year to extract |
 | WORLD_BANK_INDICATORS | Comma-separated World Bank indicator codes |
+| FX_FRESHNESS_BUSINESS_DAYS | Maximum accepted weekday lag for each FX currency; default 1 |
+| MACRO_FRESHNESS_YEARS | Maximum accepted year lag for each macro indicator; default 2 |
 
 ## Repository structure
 
@@ -377,7 +387,7 @@ This project demonstrates an end-to-end workflow rather than a dashboard-only ex
 ### Potential enhancements
 
 - [x] ETL run-audit table with row counts and run status
-- [ ] automated freshness SLA check
+- [x] automated freshness SLA check
 - [ ] Bronze-to-Silver reconciliation logging
 - [ ] deliberate incremental overlap for upstream FX revisions
 - [ ] realized FX variance using settlement rates
