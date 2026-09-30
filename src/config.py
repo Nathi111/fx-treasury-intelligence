@@ -17,6 +17,8 @@ class Settings:
     world_bank_country: str
     world_bank_start_year: int
     world_bank_indicators: tuple[str, ...]
+    fx_freshness_business_days: int
+    macro_freshness_years: int
 
 
 def _csv_env(name: str, default: str) -> tuple[str, ...]:
@@ -38,4 +40,6 @@ def get_settings() -> Settings:
             "WORLD_BANK_INDICATORS",
             "FP.CPI.TOTL.ZG,NY.GDP.MKTP.KD.ZG",
         ),
+        fx_freshness_business_days=int(os.getenv("FX_FRESHNESS_BUSINESS_DAYS", "1")),
+        macro_freshness_years=int(os.getenv("MACRO_FRESHNESS_YEARS", "2")),
     )
