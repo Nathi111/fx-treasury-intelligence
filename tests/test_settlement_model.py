@@ -90,3 +90,8 @@ def test_gold_view_appends_new_settlement_columns_after_legacy_power_bi_columns(
     assert positions == sorted(positions)
     assert fact_sql.index("po.settlement_date") > positions[-1]
     assert fact_sql.index("AS realized_fx_variance_zar") > fact_sql.index("po.settlement_date")
+
+
+def test_current_fx_rate_preserves_legacy_numeric_type():
+    sql = (ROOT / "sql" / "030_create_gold.sql").read_text(encoding="utf-8")
+    assert "(CASE WHEN po.status = 'Open' THEN fx.zar_per_unit END)::NUMERIC(18,8) AS current_fx_rate" in sql
