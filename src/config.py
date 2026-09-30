@@ -25,6 +25,13 @@ def _csv_env(name: str, default: str) -> tuple[str, ...]:
     return tuple(x.strip().upper() for x in os.getenv(name, default).split(",") if x.strip())
 
 
+def _non_negative_int_env(name: str, default: str) -> int:
+    value = int(os.getenv(name, default))
+    if value < 0:
+        raise RuntimeError(f"{name} must be zero or greater.")
+    return value
+
+
 def get_settings() -> Settings:
     database_url = os.getenv("DATABASE_URL", "")
     if not database_url:
@@ -40,6 +47,6 @@ def get_settings() -> Settings:
             "WORLD_BANK_INDICATORS",
             "FP.CPI.TOTL.ZG,NY.GDP.MKTP.KD.ZG",
         ),
-        fx_freshness_business_days=int(os.getenv("FX_FRESHNESS_BUSINESS_DAYS", "1")),
-        macro_freshness_years=int(os.getenv("MACRO_FRESHNESS_YEARS", "2")),
+        fx_freshness_business_days=_non_negative_int_env("FX_FRESHNESS_BUSINESS_DAYS", "1"),
+        macro_freshness_years=_non_negative_int_env("MACRO_FRESHNESS_YEARS", "2"),
     )
