@@ -122,6 +122,37 @@ Grain: one country / indicator / year observation.
 
 Primary key: `country_code, indicator_code, year`.
 
+### `silver.supplier`
+
+Grain: one synthetic supplier master record.
+
+| Column | Type | Description |
+|---|---|---|
+| `supplier_id` | TEXT | Stable supplier key used by the PO fact |
+| `supplier_name` | TEXT | Business-friendly synthetic supplier name |
+| `country_code` | CHAR(3) | Three-letter country code |
+| `country_name` | TEXT | Supplier country |
+| `region` | TEXT | Reporting region |
+| `supplier_tier` | TEXT | Synthetic commercial tier: Strategic or Core |
+| `payment_terms_days` | INTEGER | Synthetic payment terms |
+| `is_synthetic` | BOOLEAN | Explicit portfolio provenance flag; always true |
+| `loaded_at_utc` | TIMESTAMPTZ | Database load timestamp |
+
+### `silver.product`
+
+Grain: one synthetic product/SKU master record.
+
+| Column | Type | Description |
+|---|---|---|
+| `product_id` | TEXT | Stable product key used by the PO fact |
+| `product_name` | TEXT | Business-friendly synthetic product name |
+| `brand_name` | TEXT | Fictional brand hierarchy |
+| `category` | TEXT | Product category |
+| `subcategory` | TEXT | Product subcategory |
+| `unit_of_measure` | TEXT | EA, SET, or KIT |
+| `is_synthetic` | BOOLEAN | Explicit portfolio provenance flag; always true |
+| `loaded_at_utc` | TIMESTAMPTZ | Database load timestamp |
+
 ### `silver.purchase_order`
 
 Grain: one synthetic purchase order.
@@ -168,15 +199,11 @@ Column: `currency_code`.
 
 ### `gold.dim_supplier`
 
-Grain: one supplier.
-
-Column: `supplier_id`.
+Grain: one supplier. Exposes the stable `supplier_id` key plus supplier name, country, region, tier, payment terms and synthetic-provenance flag.
 
 ### `gold.dim_product`
 
-Grain: one product/SKU.
-
-Column: `product_id`.
+Grain: one product/SKU. Exposes the stable `product_id` key plus product name, fictional brand, category, subcategory, unit of measure and synthetic-provenance flag.
 
 ## Gold facts and analytical views
 
@@ -260,5 +287,7 @@ Implemented tests:
 | `macro_duplicate_business_key` | Duplicate country/indicator/year key |
 | `purchase_order_duplicate_id` | Duplicate PO ID |
 | `open_po_missing_fx_rate` | Open PO has no current FX rate |
+| `purchase_order_unknown_supplier` | PO supplier key is absent from the supplier master |
+| `purchase_order_unknown_product` | PO product key is absent from the product master |
 
 The pipeline raises an error if any quality failure is returned.
