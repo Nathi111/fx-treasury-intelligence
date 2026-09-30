@@ -61,6 +61,7 @@ flowchart LR
 
 - **Bronze / Silver / Gold separation** keeps source lineage, transformation logic and reporting logic distinct.
 - **PostgreSQL `ON CONFLICT` upserts** make reruns idempotent and safe for scheduled execution.
+- **Incremental FX extraction deliberately overlaps by seven calendar days by default** so revised upstream observations can be re-fetched and safely updated without duplicate business keys. The overlap is configurable and cannot move before the initial FX start date.
 - **FX inversion is explicit**: source observations are converted to ZAR per unit of USD, GBP or EUR before reporting.
 - **Synthetic purchase orders** provide the commercial scenario without using confidential employer data.
 - **April-to-March fiscal attributes** are created upstream in `gold.dim_date`.
