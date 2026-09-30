@@ -19,6 +19,7 @@ class Settings:
     world_bank_indicators: tuple[str, ...]
     fx_freshness_business_days: int
     macro_freshness_years: int
+    fx_overlap_days: int
 
 
 def _csv_env(name: str, default: str) -> tuple[str, ...]:
@@ -49,4 +50,5 @@ def get_settings() -> Settings:
         ),
         fx_freshness_business_days=_non_negative_int_env("FX_FRESHNESS_BUSINESS_DAYS", "1"),
         macro_freshness_years=_non_negative_int_env("MACRO_FRESHNESS_YEARS", "2"),
+        fx_overlap_days=_non_negative_int_env("FX_OVERLAP_DAYS", "7"),
     )
