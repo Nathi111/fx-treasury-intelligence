@@ -4,6 +4,7 @@ import logging
 from datetime import date, timedelta
 from pathlib import Path
 
+import requests
 from sqlalchemy import text
 
 from src.config import get_settings
@@ -74,6 +75,75 @@ def get_fx_incremental_start(
 
     overlap_start = latest - timedelta(days=overlap_days)
     return max(configured_start, overlap_start), latest
+
+
+def cached_macro_is_fresh(engine, settings, as_of_year: int) -> bool:
+    """Return whether cached macro rows cover every configured indicator within SLA."""
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                """
+                SELECT indicator_code, MAX(year) AS latest_year
+                FROM silver.macro_indicator
+                WHERE country_code = :country_code
+                GROUP BY indicator_code
+                """
+            ),
+            {"country_code": settings.world_bank_country},
+        ).mappings().all()
+
+    latest_by_indicator = {row["indicator_code"]: row["latest_year"] for row in rows}
+
+    for indicator_code in settings.world_bank_indicators:
+        latest_year = latest_by_indicator.get(indicator_code)
+        if latest_year is None:
+            LOGGER.error(
+                "Cannot use cached World Bank data: no stored rows for %s.",
+                indicator_code,
+            )
+            return False
+        if latest_year > as_of_year:
+            LOGGER.error(
+                "Cannot use cached World Bank data: %s latest year %s is after run year %s.",
+                indicator_code,
+                latest_year,
+                as_of_year,
+            )
+            return False
+        if as_of_year - latest_year > settings.macro_freshness_years:
+            LOGGER.error(
+                "Cannot use cached World Bank data: %s latest year %s exceeds the %s-year freshness tolerance.",
+                indicator_code,
+                latest_year,
+                settings.macro_freshness_years,
+            )
+            return False
+
+    return True
+
+
+def fetch_world_bank_with_cache_fallback(engine, settings, as_of_date: date):
+    """Fetch macro data, falling back only to already-fresh stored observations."""
+    try:
+        return fetch_indicators(
+            settings.world_bank_country,
+            settings.world_bank_indicators,
+            settings.world_bank_start_year,
+            as_of_date.year,
+        )
+    except requests.RequestException as exc:
+        if not cached_macro_is_fresh(engine, settings, as_of_date.year):
+            LOGGER.error(
+                "World Bank API unavailable and cached macro data is missing or stale; failing the ETL."
+            )
+            raise
+
+        LOGGER.warning(
+            "World Bank API unavailable after retries (%s). "
+            "Continuing with existing macro data because it is within the configured freshness SLA.",
+            exc,
+        )
+        return None
 
 
 def run_freshness_gate(engine, settings, run_id: int, as_of_date: date) -> None:
@@ -164,26 +234,27 @@ def run_pipeline(engine, settings, counts: dict[str, int], run_id: int) -> None:
     )
 
     LOGGER.info("Extracting World Bank indicators")
-    raw_macro = fetch_indicators(
-        settings.world_bank_country,
-        settings.world_bank_indicators,
-        settings.world_bank_start_year,
-        today.year,
-    )
-    load_raw_payload(engine, "world_bank", WB_URL, raw_macro)
-    macro_df = transform_world_bank(raw_macro)
-    counts["macro"] = upsert_macro(engine, macro_df)
-    macro_filtered, macro_deduplicated = macro_filter_and_duplicate_counts(raw_macro)
-    record_reconciliation(
-        engine,
-        run_id,
-        dataset_name="world_bank_macro",
-        extracted_record_count=len(raw_macro),
-        transformed_record_count=len(macro_df),
-        filtered_record_count=macro_filtered,
-        deduplicated_record_count=macro_deduplicated,
-        loaded_record_count=counts["macro"],
-    )
+    raw_macro = fetch_world_bank_with_cache_fallback(engine, settings, today)
+    if raw_macro is not None:
+        load_raw_payload(engine, "world_bank", WB_URL, raw_macro)
+        macro_df = transform_world_bank(raw_macro)
+        counts["macro"] = upsert_macro(engine, macro_df)
+        macro_filtered, macro_deduplicated = macro_filter_and_duplicate_counts(raw_macro)
+        record_reconciliation(
+            engine,
+            run_id,
+            dataset_name="world_bank_macro",
+            extracted_record_count=len(raw_macro),
+            transformed_record_count=len(macro_df),
+            filtered_record_count=macro_filtered,
+            deduplicated_record_count=macro_deduplicated,
+            loaded_record_count=counts["macro"],
+        )
+    else:
+        LOGGER.warning(
+            "Skipped World Bank Bronze/Silver refresh for run %s; freshness gate will validate cached macro data.",
+            run_id,
+        )
 
     supplier_path = ROOT / "data" / "reference" / "suppliers.csv"
     product_path = ROOT / "data" / "reference" / "products.csv"
